@@ -1,0 +1,25 @@
+Experiment,Tool,Dataset Size,Runtime
+global-sort,xalan,410,80
+global-sort,xalan,910,90
+global-sort,xalan,76220,270
+global-sort,xalan,991790,2520
+global-sort,xalan,9671420,27450
+global-sort,xsort,410,1
+global-sort,xsort,4910,1
+global-sort,xsort,76220,20
+global-sort,xsort,991790,260
+global-sort,xsort,9671420,2850
+global-sort,xsort,100964430,43970
+global-sort,xsort,1009643710,461360
+local-sort,xalan,410,80
+local-sort,xalan,4910,100
+local-sort,xalan,76220,290
+local-sort,xalan,991790,2780
+local-sort,xalan,9671420,29420
+local-sort,xsort,410,1
+local-sort,xsort,910,1
+local-sort,xsort,76220,30
+local-sort,xsort,991790,350
+local-sort,xsort,9671420,3540
+local-sort,xsort,100964430,35520
+local-sort,xsort,1009643710,358470
