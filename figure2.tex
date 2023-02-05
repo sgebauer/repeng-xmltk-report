@@ -1,0 +1,53 @@
+\begin{tikzpicture}
+  \begin{loglogaxis}[
+    subtickwidth=0pt,
+    xlabel={Input Size [Bytes]},
+    ylabel={Runtime [Seconds]},
+    xmin=100, xmax=1500000000,
+    xtick={100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000},
+    xticklabels={100, 1K, 10K, 100K, 1M, 10M, 100M, 1G},
+    ymin=1, ymax=1000000,
+    ytick={1, 10, 100, 1000, 10000, 100000, 1000000},
+    yticklabels={0.001, 0.01, 0.1, 1, 10, 100, 1000},
+    legend pos=north west,
+    ymajorgrids=true,
+    grid style=dashed,
+    ylabel near ticks,
+    yticklabel pos=right,
+  ]
+    \legend{xsort original, Xalan original, xsort reproduction, Xalan reproduction}
+    \addplot[color=blue, mark=square]
+      table[
+        col sep=comma,
+        x=Dataset Size,
+        y=Runtime,
+        select={Experiment}{local-sort},
+        select={Tool}{xsort}
+      ] {original-results/runtime.csv};
+    \addplot[color=red, mark=square]
+      table[
+        col sep=comma,
+        x=Dataset Size,
+        y=Runtime,
+        select={Experiment}{local-sort},
+        select={Tool}{xalan}
+      ] {original-results/runtime.csv};
+    \addplot[color=blue, mark=triangle]
+      table[
+        col sep=comma,
+        x=Dataset Size,
+        y=Runtime,
+        select={Experiment}{local-sort},
+        select={Tool}{xsort}
+      ] {results/runtime.csv};
+    \addplot[color=red, mark=triangle]
+      table[
+        col sep=comma,
+        x=Dataset Size,
+        y=Runtime,
+        select={Experiment}{local-sort},
+        select={Tool}{xalan}
+      ] {results/runtime.csv};
+    
+  \end{loglogaxis}
+\end{tikzpicture}

@@ -1,0 +1,187 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+\setcopyright{acmcopyright}
+\copyrightyear{2023}
+\acmYear{2023}
+
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{pgfplots}
+
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true
+}
+
+\pgfplotsset{compat=newest}
+\pgfplotsset{
+    select/.style 2 args={
+        x filter/.append code={
+            \edef\tempa{\thisrow{#1}}
+            \edef\tempaa{#2}
+            \ifx\tempa\tempaa
+            \else
+                \def\pgfmathresult{}
+            \fi
+        }
+    }}
+
+
+\begin{document}
+
+\title{Performance comparison of XMLTK and Xalan-c}
+\author{Sven Gebauer}
+\affiliation{%
+  \country{}
+  \institution{University of Passau}
+}
+\email{gebauers@fim.uni-passau.de}
+
+\begin{abstract}
+This report presents an experiment comparing the performance of XMLTK's \emph{xsort} tool with that of \emph{Xalan-c} for two different XML sorting tasks. It is a reproduction of an experiment originally performed by Avila-Campillo et al. in 2002.\cite{XMLTK}  While our exact results differ from those of the original result due to differences in the hardware environment, we are able to reproduce the general scaling behaviour and memory performance of both tools.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+In 2002, Avila-Campillo et al. introduced \emph{XMLTK}, an open-source toolkit for highly scalable XML data processing.\cite{XMLTK} They claim that XMLTK is much faster for some tasks than existing DOM-based approaches at that time, and demonstrate that by comparing XMLTK's \emph{xsort} tool to the open source XSLT processor \emph{Xalan-c}.\cite{Xalan}
+
+The goal of our work is to reproduce this experiment, and make it available as a gold-standard reproduction package.
+
+In section 2 of this report, we explain more on the background of the experiment by summarizing relevant parts of the original XMLTK paper. Section 3 then gives an overview of reproduction effort. Section 4 concludes the report with a visualization and discussion of our results.
+
+\section{Background}
+
+In this section, we give an overview of the work by Avila-Campillo et al. and their main results, in order to provide context for the experiment we want to reproduce.
+
+Their paper introduces \emph{XMLTK}, an open-source toolkit for highly scalable XML data processing.\cite{XMLTK} XMLTK consists of two main components: A set of command line tools for processing XML documents, and a highly scalable XPath processor.
+
+\subsection{The XMLTK Tools}
+
+XMLTK includes a number of command line tools for processing XML data similarly to how traditional Unix tools like \lstinline{grep} process line-based text data. This includes for example the following tools:
+
+\begin{itemize}
+  \item[xsort:] Sorts elements in a document
+  \item[xnest:] Groups elements and wraps them in a new parent element
+  \item[xflatten:] Flattens nested collections
+  \item[xdelete:] Deletes elements matching a given filter
+  \item[xhead/xtail:] Selects the first/last n elements in a document, for a given number n
+\end{itemize}
+
+The paper mainly focuses on the \lstinline{xsort} tool and describes it in more detail. Besides its input file, \lstinline{xsort} takes three additional types of parameters: The \emph{context}, specified with \lstinline{-c}, describes the element whose descendants should be sorted. \lstinline{-e} is used to specify an \emph{item expression} which matches the elements that should be sorted. The key that should be used for sorting is specified with \lstinline{-k}. All three types of parameters take XPath expressions, and can be specified multiple times for more complex sorting processes.
+
+% * Examples:
+%  * Sort entries by year: `xsort -c /dblp -e * -k year/text()`
+%  * Return all authors sorted: `xsort -c /dblp -e */authors -k text()`
+%  * Normalize order of child elements: `xsort -c /dblp/* -e title -e author -e url -e *`
+
+The authors claim that xsort can sort 4 TB of input data with 128 MB of RAM on systems with 4kb disk pages. This file size increases quadratically with the available memory size.
+
+
+\subsection{Performance comparison between xsort and Xalan}
+\label{subsec:original-experiment}
+
+To demonstrate the scalability of xsort, the paper includes a performance comparison between xsort and Xalan. \emph{Xalan}\cite{Xalan} is an implementation of XSLT and XPath based on the \emph{Xerces} XML parser. It can be used for very similar tasks as the XMLTK tools.
+
+Avila-Campillo et al. compare the performance of Xalan and xsort by using them for two different sorting tasks on seven input datasets between 500 bytes and 1 gigabyte. The input datasets are derived from the DBLP database, a computer science bibliography project.
+
+In the first experiment (called a ``global sort'' in the paper), all publications in the dataset are sorted alphabetically by their title. In the second experiment (called a ``local sort''), XML elements within each publication are reordered so that the first child entries of each publication are its title, authors and year in that order.
+
+The experiments show that xsort is much faster than Xalan for both sorting tasks. xsort is also able to process larger datasets than Xalan without running out of memory, including datasets which are larger than the available system memory.
+
+The paper lists a description of the platform on which the experiment was run:
+
+\begin{quote}
+    The platform is a Pentium III, 800 MHz, 256 KB cache 128 MB RAM, 512 MB swap, running Redhat Linux 2.2.18, the compiler is gcc version 2.95.2 with the “-O” command-line option, and Xalan-c 1.3.
+\end{quote}
+
+The exact command line parameters for xsort are also provided:
+\begin{itemize}
+    \item Global sort: \lstinline{xsort -c /dblp -e * -k title/text()}
+    \item Local sort: \lstinline{xsort -c /dblp/* -e title -e author -e year -e *}
+\end{itemize}
+
+However, the experiment description lacks the command line parameters and XSLT templates used with Xalan. It also does not mention the specific version of the DBLP dataset that was used as input.
+
+
+
+\section{Reproduction Effort}
+
+This section gives an overview of our effort to reproduce the performance comparison from \autoref{subsec:original-experiment}. The final reproduction package is available on Zenodo.\footnote{\url{https://doi.org/10.5281/zenodo.7604895}}
+
+\subsection{Choosing the environment}
+
+The original experiment ran on a Pentium III processor with Redhat Linux 2.2.18\cite{XMLTK}, which presents several challenges:
+
+Obtaining similar hardware is not feasible in our reproduction project. It is unlikely that the used version of Linux will run on modern hardware due to missing drivers and hardware interface changes like the introduction of UEFI. Running the old operating system in a virtual machine could work, but would also severely influence the experimental results due to virtualization overhead.
+
+We therefore chose to run the original versions of Xalan and xsort on a modern platform: Our host system is running Debian 11.6 with kernel version 6.0.12 on an AMD Ryzen 5900X processor with 32 GB of RAM.
+
+
+\subsection{Preparing the tools and datasets}
+
+Since the original experiment is from 2002, our main challenge is getting the old versions of the necessary tools to run. We need three components that need to be compiled from source: XMLTK, Xalan and Xerces. The build process for all three follows the same pattern:
+
+First, clone the source code for the specific version we want. Second, apply a set of patches to fix compatibility with our environment. This mainly includes updating C++ namespaces and \lstinline{#include} statements, and adapting build parameters for newer GCC versions. These changes are packaged as git patch files with the Dockerfile. Third, compile and install the software.
+
+For the input datasets, we were unable to get the exact same version of the DBLP database because the original paper does not specify a fixed version or date, and also because the DBLP archive only dates back to 2015. However, the exact contents of the dataset should not make a large difference in runtime, so we simply use the current version of the DBLP database.\cite{DBLP-current}
+
+We approximate the dataset sizes of the original experiment by rounding them up to the next full kilobyte, truncating the input XML, and then removing the last (truncated) publication in order to get valid XML output.
+
+
+\subsection{Running the experiment}
+
+The paper specifies the exact xsort parameters, but not the XSLT templates that were used with Xalan. We thus had to write our own templates with similar functionality to the given xsort parameters.
+
+We use the \lstinline{prlimit} tool to limit memory usage to the same amount of memory that was available in the original experiment.
+
+With everything prepared, we can run Xalan and xsort with the parameters for both experiments and all seven datasets, resulting in a total of 28 runtime measurements. We write this small amount of data in a simple CSV file.
+
+\subsection{Discussion}
+
+This reproduction uses the same software versions as the original experiment, but we were unable to reproduce large parts of the environment, like the processor and RAM/swap speed. Since the measured runtime heavily depends on these factors, our reproduction will not produce very similar or even identical results to the original experiment. However, if our reproduction is successful, the scaling behaviour and relative performance of xsort and Xalan should still be visible in the resulting graphs.
+
+We also had to replace some parts of the experimental setup (like the input datasets) due to missing depth of the original experiment description.
+
+Overall, our reproduction achieves full coverage of the original experiment, but we had to port it to a very different environment.
+
+
+\section{Results}
+
+The results of the experiment are shown in \autoref{fig:results}. Both graphs show the results from our reproduction and the original experiment for comparison. Missing data points for an input size indicate that the tool did not produce valid output.
+
+The original results contained observations with 0 seconds of runtime, which we replaced with 1 millisecond to make them displayable on a logarithmic scale. Since the original runtimes were given with a precision of 10ms, this is within their margin of error.
+
+\begin{figure}[h]
+    \hspace{-0.5cm}
+    \begin{subfigure}{0.1\textwidth}
+        \resizebox{!}{4cm}{\input{figure1.tex}}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.22\textwidth}
+        \resizebox{!}{4cm}{\input{figure2.tex}}
+    \end{subfigure}
+
+    \caption{Runtimes of xsort and Xalan: a global sort (left), and multiple local sorts (right).}
+    \label{fig:results}
+\end{figure}
+
+An unexpected result here is that xsort has a fixed delay of about 0.1 seconds for the global sort on small datasets of 1 MB and lower, resulting in almost identical runtime for all these datasets, and making xsort slower than Xalan in these cases.
+
+The other major difference to the original experiment is that Xalan successfully completes the local sort on the 100 MB dataset. This is likely due to Xalan having the full 640 MB of memory available to itself, where in the original setup that same amount of memory was shared with the operating system.
+
+In all other cases however, we can see that the results from the original and reproduced experiment are very similar: The runtime of both tools grows linearly with the dataset size, and xsort is faster than Xalan when it is not affected by the aforementioned delay. xsort can handle all dataset sizes, while Xalan produces invalid output for 100 MB (in global sort) and above (in both tests).
+
+This means that our overall reproduction was successful, as both tools show the same relative performance, scaling behaviour and memory characteristics.
+
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{resources.bib}
+
+\end{document}
